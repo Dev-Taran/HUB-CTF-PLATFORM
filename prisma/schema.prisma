@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // CTF related fields
+  score     Int      @default(0)
+  solves    Solve[]
+  
+  @@map("users")
+}
+
+model Challenge {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  flag        String
+  points      Int
+  category    String
+  difficulty  String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  solves      Solve[]
+  
+  @@map("challenges")
+}
+
+model Solve {
+  id          String    @id @default(cuid())
+  userId      String
+  challengeId String
+  solvedAt    DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, challengeId])
+  @@map("solves")
+}
+
+model InviteKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  isUsed    Boolean  @default(false)
+  usedBy    String?
+  createdAt DateTime @default(now())
+  usedAt    DateTime?
+  
+  @@map("invite_keys")
+}
+
+model CtfSettings {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  startTime   DateTime?
+  endTime     DateTime?
+  isSetup     Boolean  @default(false)
+  liveFireEnabled Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("ctf_settings")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
