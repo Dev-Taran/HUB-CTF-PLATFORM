@@ -1,36 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
+import { cookies } from 'next/headers'
+import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
     console.log('GET /api/challenges called')
     
-    // 쿠키에서 토큰 확인
+    // Get token from cookies
     const cookieStore = cookies()
-    const token = cookieStore.get('token')
+    const token = cookieStore.get('auth-token')?.value
     
     if (!token) {
       console.log('No token found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Verify token
+    let user
     try {
-      jwt.verify(token.value, process.env.JWT_SECRET!)
+      user = jwt.verify(token, process.env.JWT_SECRET!) as any
     } catch (error) {
       console.log('Invalid token')
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // 활성화된 challenges만 가져오기
+    // Fetch challenges from database
     const challenges = await prisma.challenge.findMany({
-      where: {
-        isActive: true
-      },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        points: true,
+        category: true,
+        difficulty: true,
+        latitude: true,
+        longitude: true,
+        createdAt: true,
         _count: {
           select: {
             solves: true
@@ -38,79 +44,79 @@ export async function GET() {
         }
       },
       orderBy: {
-        createdAt: 'asc'
+        createdAt: 'desc'
       }
     })
-
-    console.log(`Found ${challenges.length} active challenges`)
-    challenges.forEach((challenge, index) => {
-      console.log(`Challenge ${index + 1}: ${challenge.title} (${challenge.category})`)
-    })
+    
+    console.log(`Found ${challenges.length} challenges`)
 
     return NextResponse.json({ 
-      challenges,
-      message: `Found ${challenges.length} challenges`
+      challenges 
     })
   } catch (error) {
-    console.error('Error fetching challenges:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch challenges' },
-      { status: 500 }
-    )
+    console.error('GET /api/challenges error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch challenges' 
+    }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    // 쿠키에서 토큰 확인
+    console.log('POST /api/challenges called')
+    
+    // Get token from cookies
     const cookieStore = cookies()
-    const token = cookieStore.get('token')
+    const token = cookieStore.get('auth-token')?.value
     
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let decoded
+    // Verify token and check if user is admin
+    let user
     try {
-      decoded = jwt.verify(token.value, process.env.JWT_SECRET!) as any
+      user = jwt.verify(token, process.env.JWT_SECRET!) as any
     } catch (error) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // 관리자만 challenge 생성 가능
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId }
-    })
-
-    if (!user || user.role !== 'ADMIN') {
+    if (user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const { title, description, category, difficulty, points, flag } = await request.json()
+    const body = await request.json()
+    const { title, description, flag, points, category, difficulty } = body
 
-    const challenge = await prisma.challenge.create({
+    // Validate required fields
+    if (!title || !description || !flag || !points || !category || !difficulty) {
+      return NextResponse.json({ 
+        error: 'Missing required fields' 
+      }, { status: 400 })
+    }
+
+    // Create challenge
+    const newChallenge = await prisma.challenge.create({
       data: {
         title,
         description,
-        category,
-        difficulty,
-        points: parseInt(points),
         flag,
-        isActive: true
+        points,
+        category,
+        difficulty: difficulty.toUpperCase()
       }
     })
+    
+    console.log('Created new challenge:', newChallenge.title)
 
-    console.log('Created new challenge:', challenge.title)
-
-    return NextResponse.json({ 
-      challenge,
-      message: 'Challenge created successfully'
+    return NextResponse.json({
+      message: 'Challenge created successfully',
+      challenge: newChallenge,
     })
   } catch (error) {
-    console.error('Error creating challenge:', error)
-    return NextResponse.json(
-      { error: 'Failed to create challenge' },
-      { status: 500 }
-    )
+    console.error('POST /api/challenges error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to create challenge' 
+    }, { status: 500 })
   }
 }

@@ -109,7 +109,7 @@ export default function AdminChallengesPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Challenge 관리</h1>
+            <h1 className="text-3xl font-bold text-white">Challenge 관리</h1>
             <p className="text-gray-600 mt-2">CTF Challenge를 생성하고 관리하세요.</p>
           </div>
           <Link href="/dashboard/admin/challenges/create">

@@ -83,4 +83,45 @@ model Solve {
 
   @@unique([userId, challengeId])
   @@map("solves")
+}model Solve {
+  id          String    @id @default(cuid())
+  userId      String
+  challengeId String
+  solvedAt    DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, challengeId])
+  @@map("solves")
+}
+
+model InviteKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  isUsed    Boolean  @default(false)
+  usedBy    String?
+  createdAt DateTime @default(now())
+  usedAt    DateTime?
+  
+  @@map("invite_keys")
+}
+
+model CtfSettings {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  startTime   DateTime?
+  endTime     DateTime?
+  isSetup     Boolean  @default(false)
+  liveFireEnabled Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("ctf_settings")
+}
+
+enum Role {
+  USER
+  ADMIN
 }

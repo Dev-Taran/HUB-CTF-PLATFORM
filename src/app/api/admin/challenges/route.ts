@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, flag, points, category, difficulty } = body;
+    const { title, description, flag, points, category, difficulty, latitude, longitude } = body;
 
     // 입력 데이터 검증
     if (!title || !description || !flag || !points || !category || !difficulty) {
@@ -40,34 +40,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '포인트는 양의 정수여야 합니다.' }, { status: 400 });
     }
 
+    // 위치 정보 검증 (선택사항이지만 둘 다 있거나 둘 다 없어야 함)
+    if ((latitude && !longitude) || (!latitude && longitude)) {
+      return NextResponse.json({ 
+        error: '위치 정보는 함께 제공되거나 제공되지 않아야 합니다.' 
+      }, { status: 400 });
+    }
+
     // Challenge 생성
     const challenge = await prisma.challenge.create({
       data: {
         title,
         description,
         flag,
-        points,
+        points: parseInt(points.toString()),
         category,
-        difficulty,
-        isActive: true,
-      },
-    });
+        difficulty: difficulty.toUpperCase(),
+        latitude: latitude ? parseFloat(latitude.toString()) : null,
+        longitude: longitude ? parseFloat(longitude.toString()) : null,
+      }
+    })
 
-    return NextResponse.json({
-      message: 'Challenge가 성공적으로 생성되었습니다.',
+    return NextResponse.json({ 
+      message: 'Challenge created successfully', 
       challenge: {
         id: challenge.id,
         title: challenge.title,
-        description: challenge.description,
-        points: challenge.points,
         category: challenge.category,
         difficulty: challenge.difficulty,
-        isActive: challenge.isActive,
-        createdAt: challenge.createdAt,
-      },
-    }, { status: 201 });
-
-  } catch (error) {
+        points: challenge.points,
+        latitude: challenge.latitude,
+        longitude: challenge.longitude,
+      }
+    })  } catch (error) {
     console.error('Challenge 생성 오류:', error);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
@@ -97,8 +102,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 일반 사용자는 활성화된 challenge만 볼 수 있음, 관리자는 모든 challenge 볼 수 있음
-    const challenges = await prisma.challenge.findMany({
-      where: user.role === 'ADMIN' ? {} : { isActive: true },
+        const challenges = await prisma.challenge.findMany({
       select: {
         id: true,
         title: true,
@@ -106,20 +110,19 @@ export async function GET(request: NextRequest) {
         points: true,
         category: true,
         difficulty: true,
-        isActive: true,
+        latitude: true,
+        longitude: true,
         createdAt: true,
-        // flag는 관리자만 볼 수 있음
-        ...(user.role === 'ADMIN' && { flag: true }),
         _count: {
           select: {
-            solves: true,
-          },
-        },
+            solves: true
+          }
+        }
       },
       orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        createdAt: 'desc'
+      }
+    })
 
     return NextResponse.json({ challenges }, { status: 200 });
 

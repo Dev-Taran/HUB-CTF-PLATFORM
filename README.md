@@ -82,3 +82,9 @@ The platform includes the following models:
 ├── prisma/                  # Database schema
 └── README.md
 ```
+
+### 만들어야하는 기능
+1. Challenge Prob 올리기
+2. Docker 이미지를 통한 문제 돌리기 (Challenge Start 버튼 클릭시 접속 정보 떠야함)
+3. Leader Board 
+4. tlqkf 그냥 전체적으로 전체 확인 후 문제점들 수정해야함
