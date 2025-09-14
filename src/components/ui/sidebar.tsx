@@ -112,6 +112,11 @@ const adminItems = [
   },
 ]
 
+interface SidebarProps {
+  isOpen?: boolean
+  onToggle?: () => void
+}
+
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
@@ -155,21 +160,23 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
       <div
         className={cn(
           // Mobile: fixed overlay sidebar
-          "fixed top-16 left-0 z-50 h-[calc(100vh-4rem)] w-64 bg-card border-r transform transition-transform duration-200 ease-in-out",
+          "fixed top-16 left-0 z-50 h-[calc(100vh-4rem)] w-64 transform transition-transform duration-200 ease-in-out",
           // Desktop: static sidebar
           "lg:relative lg:top-0 lg:h-full lg:translate-x-0 lg:block",
           // Mobile visibility
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{ backgroundColor: '#1a1a1a' }}
       >
         <div className="flex flex-col h-full">
           {/* Header - only show on mobile */}
-          <div className="flex items-center justify-between p-4 border-b lg:hidden">
-            <h2 className="text-lg font-semibold">Menu</h2>
+          <div className="flex items-center justify-between p-4 lg:hidden">
+            <h2 className="text-lg font-semibold text-white">Menu</h2>
             <Button
               variant="ghost"
               size="sm"
               onClick={onToggle}
+              className="text-white hover:bg-gray-700"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -190,15 +197,15 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                       pathname === item.href
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        ? "bg-cyan-600 bg-opacity-20 backdrop-blur-sm text-cyan-300"
+                        : "text-gray-300 hover:bg-white hover:bg-opacity-10 hover:backdrop-blur-sm hover:text-white"
                     )}
                     onClick={() => {
                       // Close sidebar on mobile when clicking a link
                       if (window.innerWidth < 1024) {
-                        onToggle()
+                        onToggle?.()
                       }
                     }}
                   >
@@ -214,15 +221,15 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   <Link
                     href={liveFireItem.href}
                     className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                       pathname === liveFireItem.href
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        ? "bg-orange-600 bg-opacity-20 backdrop-blur-sm text-orange-300"
+                        : "text-gray-300 hover:bg-white hover:bg-opacity-10 hover:backdrop-blur-sm hover:text-white"
                     )}
                     onClick={() => {
                       // Close sidebar on mobile when clicking a link
                       if (window.innerWidth < 1024) {
-                        onToggle()
+                        onToggle?.()
                       }
                     }}
                   >
@@ -233,35 +240,44 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               )}
 
               {/* Other navigation items */}
-              {otherSidebarItems.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                      pathname === item.href
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    )}
-                    onClick={() => {
-                      // Close sidebar on mobile when clicking a link
-                      if (window.innerWidth < 1024) {
-                        onToggle()
-                      }
-                    }}
-                  >
-                    {item.icon}
-                    <span>{item.title}</span>
-                  </Link>
-                </li>
-              ))}
+              {otherSidebarItems.map((item, index) => {
+                const activeColors = [
+                  { bg: 'bg-purple-600', text: 'text-purple-300' },
+                  { bg: 'bg-green-600', text: 'text-green-300' },
+                  { bg: 'bg-blue-600', text: 'text-blue-300' }
+                ]
+                const activeColor = activeColors[index]
+                
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                        pathname === item.href
+                          ? `${activeColor.bg} bg-opacity-20 backdrop-blur-sm ${activeColor.text}`
+                          : "text-gray-300 hover:bg-white hover:bg-opacity-10 hover:backdrop-blur-sm hover:text-white"
+                      )}
+                      onClick={() => {
+                        // Close sidebar on mobile when clicking a link
+                        if (window.innerWidth < 1024) {
+                          onToggle?.()
+                        }
+                      }}
+                    >
+                      {item.icon}
+                      <span>{item.title}</span>
+                    </Link>
+                  </li>
+                )
+              })}
 
               {/* Admin Section */}
               {user?.role === 'ADMIN' && (
                 <>
                   <li className="pt-4">
                     <div className="px-3 py-2">
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                         Administration
                       </h3>
                     </div>
@@ -271,15 +287,15 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                       <Link
                         href={item.href}
                         className={cn(
-                          "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                          "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                           pathname === item.href
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                            ? "bg-red-600 bg-opacity-20 backdrop-blur-sm text-red-300"
+                            : "text-gray-300 hover:bg-white hover:bg-opacity-10 hover:backdrop-blur-sm hover:text-white"
                         )}
                         onClick={() => {
                           // Close sidebar on mobile when clicking a link
                           if (window.innerWidth < 1024) {
-                            onToggle()
+                            onToggle?.()
                           }
                         }}
                       >
@@ -294,9 +310,9 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t">
-            <div className="text-xs text-muted-foreground text-center">
-              CTF Platform v1.0
+          <div className="p-4">
+            <div className="text-xs text-gray-400 text-center">
+              Powered by TARAN
             </div>
           </div>
         </div>

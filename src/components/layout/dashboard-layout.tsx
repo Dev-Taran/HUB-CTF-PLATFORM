@@ -27,7 +27,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [user, setUser] = useState<User | null>(null)
   const [ctfSettings, setCtfSettings] = useState<CtfSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -46,11 +45,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       console.error('Error fetching CTF settings:', error)
     }
   }
-
-  useEffect(() => {
-    checkAuth()
-    getCtfSettings()
-  }, [])
 
   const checkAuth = async () => {
     try {
@@ -93,52 +87,49 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setSidebarOpen(true)}
-          className="lg:hidden"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </Button>
-
-        {/* CTF Name - always visible */}
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">{ctfSettings?.name || 'CTF Platform'}</h1>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Welcome,</span>
-            <span className="font-medium">{user?.username}</span>
-            <span className="text-muted-foreground">•</span>
-            <span className="font-medium text-primary">{user?.score} pts</span>
-          </div>
+    <div className="h-screen overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
+      {/* 상단 네비게이션 바 - 전체 화면 가로 100% */}
+      <header className="h-16 shadow-sm flex-shrink-0 w-full" style={{ backgroundColor: '#0f0f0f' }}>
+        <div className="flex items-center justify-between h-full px-6">
+          <h1 className="text-2xl font-bold text-white">
+            {ctfSettings?.name || 'CTF Platform'}
+          </h1>
           
-          <Button onClick={handleLogout} variant="outline" size="sm">
-            Logout
-          </Button>
+          <div className="flex items-center space-x-4">
+            {user && (
+              <>
+                <div className="hidden md:flex items-center gap-2 text-sm">
+                  <span className="text-gray-300">Welcome,</span>
+                  <span className="font-medium text-white">{user?.username}</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="font-medium text-green-400">{user?.score} pts</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleLogout}
+                  className="bg-transparent border border-gray-600 text-white hover:bg-white hover:bg-opacity-10 hover:backdrop-blur-sm transition-all duration-200"
+                >
+                  Logout
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
       <div className="flex h-[calc(100vh-4rem)]">
-        {/* Sidebar */}
-        <Sidebar 
-          isOpen={sidebarOpen} 
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
-        />
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="container mx-auto p-4 md:p-6">
+        {/* 사이드바 */}
+        <div className="w-64 shadow-sm flex-shrink-0" style={{ backgroundColor: '#1a1a1a' }}>
+          <Sidebar />
+        </div>
+        
+        {/* 메인 컨텐츠 */}
+        <div className="flex-1 overflow-hidden relative" style={{ backgroundColor: '#0f0f0f' }}>
+          <div className="h-full p-6">
             {children}
           </div>
-        </main>
+        </div>
       </div>
     </div>
   )
